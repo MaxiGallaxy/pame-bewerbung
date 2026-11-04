@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bewerbung bestätigen · PaMe</title>
+  <style>
+    :root{
+      --bg:#0d0a14; --card:#191326; --card2:#211a30; --line:#2d2440;
+      --text:#f0eaf4; --muted:#a79cb8; --blue:#c724b1; --orange:#f2d500; --good:#28c76f; --bad:#ff5d6c;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:24px;
+      background:radial-gradient(900px 500px at 50% 0%, rgba(199,36,177,.18), transparent 70%), var(--bg);
+      color:var(--text); font-family:"Segoe UI",system-ui,-apple-system,sans-serif; line-height:1.55; text-align:center}
+    .box{max-width:460px; width:100%}
+    .logo-img{height:120px; width:auto; max-width:60%; margin:0 auto 26px; display:block;
+      filter:drop-shadow(0 10px 28px rgba(201,36,177,.4))}
+    .icon{width:92px; height:92px; margin:0 auto 20px; border-radius:50%; display:flex; align-items:center;
+      justify-content:center; font-size:52px}
+    .icon.ok{background:var(--good); color:#06240f; box-shadow:0 12px 40px rgba(40,199,111,.4)}
+    .icon.wait{background:var(--card2); color:var(--orange); border:1px solid var(--line)}
+    .icon.err{background:var(--bad); color:#3a0109; box-shadow:0 12px 40px rgba(255,93,108,.35)}
+    h1{font-size:23px; margin:0 0 10px}
+    p{color:var(--muted); font-size:15px; margin:0 0 8px}
+    .appid{margin:20px auto 0; max-width:360px; background:var(--card2); border:1px solid var(--line);
+      border-left:4px solid var(--orange); border-radius:14px; padding:14px 16px; text-align:left}
+    .appid span{display:block; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+    .appid b{font-size:26px; letter-spacing:.04em; color:var(--orange); font-family:ui-monospace,Consolas,monospace}
+    .retry{margin-top:18px; padding:12px 18px; border:none; border-radius:11px; cursor:pointer;
+      background:var(--blue); color:#fff; font-size:15px; font-weight:700; font-family:inherit}
+    .retry:hover{filter:brightness(1.1)}
+    .home{display:inline-block; margin-top:18px; color:#efc4e8; text-decoration:none; border:1px solid var(--line);
+      padding:7px 16px; border-radius:999px; font-weight:600; font-size:14px}
+    .home:hover{border-color:var(--blue); color:#fff}
+  </style>
+</head>
+<body>
+  <div class="box">
+    <img class="logo-img" src="pame-logo.png" alt="PaMe">
+    <div class="icon wait" id="icon">⏳</div>
+    <h1 id="title">Bewerbung wird bestätigt …</h1>
+    <p id="msg">Einen Moment bitte.</p>
+    <div id="extra"></div>
+  </div>
+
+  <script>
+    const POINTER = 'https://raw.githubusercontent.com/MaxiGallaxy/pame-bewerbung/main/backend.json';
+    const icon = document.getElementById('icon');
+    const title = document.getElementById('title');
+    const msg = document.getElementById('msg');
+    const extra = document.getElementById('extra');
+
+    function token() {
+      const u = new URL(window.location.href);
+      return u.searchParams.get('t') || u.searchParams.get('token') || '';
+    }
+    function show(state, t, m, html) {
+      icon.className = 'icon ' + state;
+      icon.textContent = state === 'ok' ? '✓' : (state === 'err' ? '✕' : '⏳');
+      title.textContent = t; msg.innerHTML = m; extra.innerHTML = html || '';
+    }
+
+    async function backendUrl() {
+      try {
+        const r = await fetch(POINTER + '?t=' + Date.now(), { cache: 'no-store' });
+        if (!r.ok) return '';
+        const j = await r.json();
+        return (j && j.online && j.url) ? j.url.replace(/\/+$/, '') : '';
+      } catch (e) { return ''; }
+    }
+
+    async function run() {
+      const t = token();
+      if (!t) { show('err', 'Link unvollständig', 'Dieser Bestätigungslink ist ungültig. Bitte nutze den Link aus deiner Bestätigungsmail.'); return; }
+      show('wait', 'Bewerbung wird bestätigt …', 'Einen Moment bitte.');
+      const base = await backendUrl();
+      if (!base) {
+        show('err', 'Gerade nicht erreichbar',
+          'Die Bestätigung ist im Moment nicht möglich, weil der Bewerbungs-Eingang offline ist. ' +
+          '<b>Dein Link bleibt gültig</b> – bitte klicke ihn einfach später noch einmal an.',
+          '<button class="retry" onclick="run()">Erneut versuchen</button>');
+        return;
+      }
+      try {
+        const r = await fetch(base + '/api/pame/verify', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: t })
+        });
+        const j = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(j.detail || 'Bestätigung fehlgeschlagen.');
+        const idBox = j.code ? '<div class="appid"><span>Deine Bewerber-ID</span><b>' + j.code + '</b></div>' : '';
+        if (j.status === 'already') {
+          show('ok', 'Schon bestätigt ✅', 'Deine Bewerbung war bereits bestätigt – es ist alles erledigt. Flashi meldet sich bei dir.', idBox);
+        } else {
+          show('ok', 'Bewerbung erfolgreich zugestellt! 🎉',
+            'Deine Bewerbung ist jetzt endgültig bei Flashi eingegangen. Wir melden uns per E-Mail bei dir – schau ggf. auch in den Spam-Ordner.', idBox);
+        }
+      } catch (err) {
+        show('err', 'Bestätigung fehlgeschlagen',
+          (err.message || 'Unbekannter Fehler') + ' <b>Dein Link bleibt gültig</b> – du kannst es später erneut versuchen.',
+          '<button class="retry" onclick="run()">Erneut versuchen</button>');
+      }
+    }
+    window.run = run;
+    run();
+  </script>
+</body>
+</html>

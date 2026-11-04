@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>PaMe · Bewerbung für den 3. Trio-Platz</title>
+  <style>
+    :root{
+      --bg:#0d0a14; --bg2:#120e1b; --card:#191326; --card2:#211a30;
+      --line:#2d2440; --text:#f0eaf4; --muted:#a79cb8;
+      --blue:#c724b1; --blue2:#a01e90; --orange:#f2d500; --good:#28c76f; --bad:#ff5d6c;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; background:
+        radial-gradient(1100px 500px at 50% -120px, rgba(199,36,177,.22), transparent 70%),
+        radial-gradient(900px 500px at 100% 110%, rgba(242,213,0,.10), transparent 70%),
+        var(--bg);
+      color:var(--text); font-family:"Segoe UI",system-ui,-apple-system,sans-serif;
+      line-height:1.55; min-height:100vh;
+    }
+    .wrap{max-width:620px; margin:0 auto; padding:34px 18px 48px}
+    .hero{text-align:center; margin:0 auto 34px; position:relative; left:50%; transform:translateX(-50%); width:min(820px,94vw); padding:0 20px; box-sizing:border-box}
+    .logo-img{height:180px; width:auto; max-width:66%; margin:0 auto 30px; display:block;
+      filter:drop-shadow(0 10px 28px rgba(201,36,177,.4));}
+    .hero h1{margin:0; line-height:1.32}
+    .h1-main{display:block; font-size:20px; font-weight:700; white-space:nowrap}
+    .h1-tag{display:block; margin-top:9px; font-size:20px; font-weight:800}
+    @media(max-width:880px){
+      .hero{position:static; left:auto; transform:none; width:auto}
+      .h1-main{white-space:normal; font-size:19px}
+      .h1-tag{font-size:19px}
+    }
+    .pop{color:var(--orange)}
+    .intro{text-align:left; margin:38px 0 28px}
+    .lead{font-size:17px; font-weight:700; margin:0 0 12px; color:#fff}
+    .reqs{list-style:none; margin:0 0 32px; padding:0}
+    .reqs li{position:relative; padding:8px 0 8px 28px; font-size:15px; color:#dcd4e6;
+      border-bottom:1px solid rgba(255,255,255,.055)}
+    .reqs li:last-child{border-bottom:none}
+    .reqs li::before{content:"✦"; position:absolute; left:3px; top:8px; color:var(--blue); font-size:14px}
+    .note-ic{font-size:12px; font-style:italic; color:var(--muted)}
+    .convince{font-size:15.5px; font-weight:600; color:#efe7f5; margin:0 0 14px}
+    .card{
+      background:linear-gradient(180deg,var(--card),var(--bg2));
+      border:1px solid var(--line); border-radius:18px; padding:22px 20px;
+      box-shadow:0 16px 48px rgba(0,0,0,.45);
+    }
+    label{display:block; font-size:13.5px; font-weight:600; margin:0 0 15px; color:#cfd7ea}
+    label .req{color:var(--orange)}
+    input,textarea{
+      width:100%; margin-top:7px; padding:11px 13px; border-radius:11px;
+      background:#140e1f; border:1px solid var(--line); color:var(--text);
+      font-size:15px; font-family:inherit; transition:border-color .15s, box-shadow .15s;
+    }
+    input:focus,textarea:focus{outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(199,36,177,.28)}
+    textarea{resize:vertical; min-height:72px}
+    .hint{display:block; margin-top:7px; font-size:12px; font-weight:500; color:var(--muted)}
+
+    /* Geburtsjahr-Scrollrad */
+    .year-field{width:100%; text-align:left; margin-top:7px; padding:11px 13px; border-radius:11px;
+      background:#140e1f; border:1px solid var(--line); color:var(--text); font-size:15px;
+      font-family:inherit; cursor:pointer; transition:border-color .15s, box-shadow .15s}
+    .year-field.placeholder{color:var(--muted)}
+    .year-field:hover{border-color:var(--blue)}
+    .year-field:focus{outline:none; border-color:var(--blue); box-shadow:0 0 0 3px rgba(199,36,177,.28)}
+    .year-modal{max-width:360px}
+    .year-modal h3{margin:0 0 6px}
+    .wheels{display:flex; gap:14px; justify-content:center}
+    .wheelcol{flex:1; min-width:0}
+    .wheel-lbl{text-align:center; font-size:12px; font-weight:600; color:var(--muted); margin-bottom:2px}
+    .wheel-wrap{position:relative; height:220px; margin:12px 0 6px; overflow:hidden;
+      -webkit-mask-image:linear-gradient(to bottom,transparent,#000 24%,#000 76%,transparent);
+              mask-image:linear-gradient(to bottom,transparent,#000 24%,#000 76%,transparent)}
+    .wheel{height:100%; overflow-y:scroll; scroll-snap-type:y mandatory; padding:88px 0;
+      text-align:center; scrollbar-width:none; -ms-overflow-style:none;
+      touch-action:pan-y; overscroll-behavior:contain}
+    .wheel::-webkit-scrollbar{display:none}
+    .wheel-item{height:44px; line-height:44px; scroll-snap-align:center; cursor:pointer;
+      font-size:23px; font-weight:700; color:var(--text); will-change:transform,opacity}
+    .wheel-band{position:absolute; left:8px; right:8px; top:88px; height:44px; pointer-events:none;
+      border-top:1px solid var(--blue); border-bottom:1px solid var(--blue);
+      background:rgba(199,36,177,.08); border-radius:8px}
+    .err{color:var(--bad); font-weight:600; font-size:13.5px; margin:4px 0 0; min-height:0}
+    #formErr:not(:empty){margin:2px 0 14px; padding:10px 13px; border-radius:11px;
+      background:rgba(255,93,108,.12); border:1px solid rgba(255,93,108,.4)}
+    .btn-main{
+      width:100%; margin-top:4px; padding:14px; border:none; border-radius:12px; cursor:pointer;
+      background:linear-gradient(135deg,var(--blue),var(--blue2)); color:#fff;
+      font-size:16px; font-weight:700; letter-spacing:.3px; transition:filter .15s, transform .05s;
+    }
+    .btn-main:hover{filter:brightness(1.08)}
+    .btn-main:active{transform:scale(.99)}
+    .btn-main:disabled{filter:grayscale(.6) brightness(.7); cursor:not-allowed}
+    .consent{display:flex; gap:9px; align-items:flex-start; margin:2px 0 16px; font-size:12.5px; color:var(--muted); font-weight:500}
+    .consent a{color:#efc4e8}
+    .foot{margin-top:24px; text-align:center; color:var(--muted); font-size:12.5px}
+    .foot p{margin:0 0 12px}
+    .foot .legal-links{display:flex; gap:10px; justify-content:center; flex-wrap:wrap; margin:0 0 14px}
+    .foot .legal-links a{display:inline-block; color:#efc4e8; text-decoration:none; border:1px solid var(--line);
+      padding:6px 16px; border-radius:999px; font-weight:600}
+    .foot .legal-links a:hover{border-color:var(--blue); color:#fff}
+    .foot .social-title{margin:16px 0 12px; font-size:13px; font-weight:600; color:#cfc6da}
+    .socials{display:flex; flex-wrap:wrap; justify-content:center; gap:13px; margin:0 0 20px}
+    .soc{display:inline-flex; align-items:center; justify-content:center; width:40px; height:40px;
+      border-radius:11px; border:1px solid var(--line); background:var(--card2); color:#b9afc9;
+      transition:color .15s, border-color .15s, transform .1s}
+    .soc svg{width:21px; height:21px; fill:currentColor}
+    .soc:hover{transform:translateY(-2px)}
+    .soc-twitch:hover{color:#9146FF; border-color:#9146FF}
+    .soc-youtube:hover{color:#FF0000; border-color:#FF0000}
+    .soc-instagram:hover{color:#E1306C; border-color:#E1306C}
+    .soc-x:hover{color:#fff; border-color:#fff}
+    .soc-tiktok:hover{color:#fff; border-color:#fff}
+    .soc-snapchat:hover{color:#FFFC00; border-color:#FFFC00}
+    .soc-discord:hover{color:#5865F2; border-color:#5865F2}
+    .soc-merch svg{fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round}
+    .soc-merch:hover{color:#f2d500; border-color:#f2d500}
+
+    /* Overlays */
+    .overlay{position:fixed; inset:0; background:rgba(5,8,15,.72); backdrop-filter:blur(3px);
+      display:none; align-items:center; justify-content:center; padding:18px; z-index:50}
+    .overlay.open{display:flex}
+    .modal{background:var(--card); border:1px solid var(--line); border-radius:16px;
+      padding:24px 22px; max-width:400px; width:100%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.6)}
+    .modal h3{margin:0 0 10px; font-size:19px}
+    .modal p{margin:0 0 18px; color:#cfd7ea; font-size:14.5px}
+    .actions{display:flex; gap:12px}
+    .actions button{flex:1; padding:12px; border:none; border-radius:11px; cursor:pointer;
+      font-size:15px; font-weight:700; color:#fff; transition:filter .15s}
+    .actions button:hover{filter:brightness(1.1)}
+    .actions button:disabled{opacity:.6; cursor:default}
+    .btn-yes{background:var(--good)} .btn-no{background:var(--bad)}
+
+    /* Geschlossen-Hinweis (ClipForge offline) */
+    .closed{margin:0 0 22px; padding:15px 17px; border-radius:14px; text-align:center;
+      background:rgba(255,93,108,.1); border:1px solid rgba(255,93,108,.4); color:#ffd3d8; font-size:14.5px; font-weight:600}
+    .closed small{display:block; margin-top:5px; font-weight:400; color:var(--muted)}
+
+    /* Cookie-Banner */
+    .cookie{position:fixed; left:0; right:0; bottom:0; z-index:70; display:none;
+      background:var(--card); border-top:1px solid var(--line); box-shadow:0 -12px 40px rgba(0,0,0,.5)}
+    .cookie.open{display:block}
+    .cookie-in{max-width:760px; margin:0 auto; padding:16px 18px; display:flex; gap:16px; align-items:center; flex-wrap:wrap}
+    .cookie-tx{flex:1; min-width:240px; font-size:13px; color:#d5cce0; line-height:1.5}
+    .cookie-tx a{color:#efc4e8}
+    .cookie-btns{display:flex; gap:10px; flex-wrap:wrap}
+    .cookie-btns button{padding:10px 16px; border-radius:10px; border:1px solid var(--line); cursor:pointer;
+      font-size:13.5px; font-weight:700; font-family:inherit}
+    .ck-ok{background:var(--blue); border-color:var(--blue); color:#fff}
+    .ck-ok:hover{filter:brightness(1.1)}
+    .ck-no{background:transparent; color:#cfc6da}
+    .ck-no:hover{border-color:var(--blue); color:#fff}
+
+    .success{position:fixed; inset:0; z-index:60; display:none; align-items:center; justify-content:center;
+      padding:24px; text-align:center; overflow:auto;
+      background:radial-gradient(900px 500px at 50% 0%, rgba(40,199,111,.18), transparent 70%), var(--bg)}
+    .success.open{display:flex}
+    .success-inner{max-width:470px}
+    .success .check{width:92px; height:92px; margin:0 auto 20px; border-radius:50%;
+      background:var(--orange); display:flex; align-items:center; justify-content:center;
+      font-size:52px; color:#3a2f00; box-shadow:0 12px 40px rgba(242,213,0,.4)}
+    .success h2{font-size:23px; margin:0 0 10px}
+    .success p{color:var(--muted); font-size:15px; margin:0 0 6px}
+    .success .big{color:#efe7f5; font-size:15.5px; font-weight:600; margin-bottom:14px}
+    .success .appid-box{margin:22px auto 6px; max-width:430px; background:var(--card2); border:1px solid var(--line);
+      border-left:4px solid var(--orange); border-radius:14px; padding:16px 18px; text-align:left}
+    .success .appid-label{display:block; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
+    .success .appid-coderow{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:4px 0 12px}
+    .success .appid-code{font-size:30px; font-weight:800; letter-spacing:.04em; color:var(--orange);
+      margin:0; font-family:ui-monospace,Consolas,monospace}
+    .appid-copy{display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1px solid var(--line);
+      background:var(--card); color:var(--text); font-size:13px; font-weight:600; padding:8px 13px; border-radius:10px;
+      transition:background .18s, border-color .18s, color .18s, transform .06s}
+    .appid-copy:hover{border-color:var(--orange)}
+    .appid-copy:active{transform:scale(.95)}
+    .appid-copy.copied{background:var(--good); border-color:var(--good); color:#06240f; animation:cp-pop .42s ease}
+    @keyframes cp-pop{0%{transform:scale(1)} 40%{transform:scale(1.14)} 100%{transform:scale(1)}}
+    .success .appid-hint{color:var(--muted); font-size:13.5px; line-height:1.55; margin:0}
+    .success .appid-hint b{color:var(--text)}
+    .success .success-close{margin-top:16px}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="hero">
+      <img class="logo-img" src="pame-logo.png" alt="PanicMaster · PaMe">
+      <h1>
+        <span class="h1-main">Illu und ich (The_Flashpointer aka Flashi) suchen eine/n neue/n Trio-Mate.</span>
+        <span class="h1-tag">Kurz gesagt: <span class="pop">Wir suchen dich!</span></span>
+      </h1>
+    </header>
+
+    <div class="closed" id="closedNote" style="display:none">
+      Die Bewerbungsphase ist gerade <b>geschlossen</b>.
+      <small>Bitte schau später noch einmal vorbei – dann ist das Formular wieder aktiv.</small>
+    </div>
+
+    <section class="intro">
+      <p class="lead">Was du mitbringen musst:</p>
+      <ul class="reqs">
+        <li>18. Lebensjahr vollendet</li>
+        <li>selber Streamer/in sein (nach Möglichkeit ähnliche Reichweite)</li>
+        <li>grds. jeden Dienstag von 19 – 21&nbsp;Uhr Zeit und Bock haben für den Hardgrind (diesen streamst du parallel auf deinem Twitch-Acc)</li>
+        <li>Ähnlicher Rocket-League-Rang wie wir <span class="note-ic">*Illu und ich sind C1</span></li>
+        <li>Humor, Kreativität und Leidenschaft</li>
+      </ul>
+      <p class="convince">Konnten wir dich überzeugen und bringst du alles mit?<br>Dann bewirb dich gerne. Wir melden uns schnellstmöglich bei dir.</p>
+    </section>
+
+    <form id="appForm" class="card" novalidate>
+      <label>Vorname / Spitzname / Gamertag <span class="req">*</span>
+        <input type="text" name="nickname" autocomplete="off" required>
+      </label>
+
+      <label>Geburtsmonat und -Jahr <span class="req">*</span>
+        <input type="hidden" name="birth_year" id="birthYearInput">
+        <input type="hidden" name="birth_month" id="birthMonthInput">
+        <button type="button" class="year-field placeholder" id="yearField">hier anklicken/ -tippen</button>
+      </label>
+
+      <label>Twitch-Accountname <span class="req">*</span>
+        <input type="text" name="twitch_name" autocomplete="off" required>
+      </label>
+
+      <label>Rocket-League-Accountname <span class="req">*</span>
+        <input type="text" name="rl_name" autocomplete="off" required>
+        <span class="hint">Für den Rocket-League-Tracker (zum Prüfen deines Rangs).</span>
+      </label>
+
+      <label>E-Mail-Adresse <span class="req">*</span>
+        <input type="email" name="email" autocomplete="off" required>
+        <span class="hint">Wir schicken dir eine Bestätigungsmail – erst damit geht deine Bewerbung endgültig ein.</span>
+      </label>
+
+      <label>Discord-Accountname <span class="req">*</span>
+        <input type="text" name="discord_name" autocomplete="off" required>
+      </label>
+
+      <label>Vermerk (optional)
+        <textarea name="note" placeholder="Magst du uns noch etwas dalassen? (freiwillig)"></textarea>
+      </label>
+
+      <p class="consent">
+        <span>Mit dem Absenden stimmst du zu, dass wir deine Angaben zum Zweck der Mate-Suche verarbeiten. Details in der <a href="datenschutz.html" target="_blank" rel="noopener noreferrer">Datenschutzerklärung</a>.</span>
+      </p>
+
+      <p class="err" id="formErr"></p>
+      <button type="submit" class="btn-main" id="submitBtn">Abschicken</button>
+    </form>
+
+    <footer class="foot">
+      <p>Deine Daten werden <b>ausschließlich</b> zum Finden eines Mates verwendet und <b>nicht an Dritte</b> weitergegeben. Sobald ein Mate gefunden wurde, werden alle Daten gelöscht.</p>
+      <div class="legal-links">
+        <a href="https://mein.online-impressum.de/the_flashpointer/" target="_blank" rel="noopener noreferrer">Impressum</a>
+        <a href="datenschutz.html" target="_blank" rel="noopener noreferrer">Datenschutzerklärung</a>
+      </div>
+      <p class="social-title">Folge mir auf Social Media</p>
+      <div class="socials">
+        <a href="https://www.twitch.tv/the_flashpointer" target="_blank" rel="noopener noreferrer" class="soc soc-twitch" aria-label="Twitch"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11.571 4.714h1.715v5.143H11.57zm4.715 0H18v5.143h-1.714zM6 0L1.714 4.286v15.428h5.143V24l4.286-4.286h3.428L22.286 12V0zm14.571 11.143l-3.428 3.428h-3.429l-3 3v-3H6.857V1.714h13.714Z"/></svg></a>
+        <a href="https://www.youtube.com/@TheFlashpointer" target="_blank" rel="noopener noreferrer" class="soc soc-youtube" aria-label="YouTube"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg></a>
+        <a href="https://www.instagram.com/theflashpointer" target="_blank" rel="noopener noreferrer" class="soc soc-instagram" aria-label="Instagram"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077"/></svg></a>
+        <a href="https://x.com/TFlashpointer" target="_blank" rel="noopener noreferrer" class="soc soc-x" aria-label="X (Twitter)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.234 10.162 22.977 0h-2.072l-7.591 8.824L7.251 0H.258l9.168 13.343L.258 24H2.33l8.016-9.318L16.749 24h6.993zm-2.837 3.299-.929-1.329L3.076 1.56h3.182l5.965 8.532.929 1.329 7.754 11.09h-3.182z"/></svg></a>
+        <a href="https://www.tiktok.com/@theflashpointer" target="_blank" rel="noopener noreferrer" class="soc soc-tiktok" aria-label="TikTok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></a>
+        <a href="https://www.snapchat.com/@theflashpointer" target="_blank" rel="noopener noreferrer" class="soc soc-snapchat" aria-label="Snapchat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12 1.033-.301.165-.088.344-.104.464-.104.182 0 .359.029.509.09.45.149.734.479.734.838.015.449-.39.839-1.213 1.168-.089.029-.209.075-.344.119-.45.135-1.139.36-1.333.81-.09.224-.061.524.12.868l.015.015c.06.136 1.526 3.475 4.791 4.014.255.044.435.27.42.509 0 .075-.015.149-.045.225-.24.569-1.273.988-3.146 1.271-.059.091-.12.375-.164.57-.029.179-.074.36-.134.553-.076.271-.27.405-.555.405h-.03c-.135 0-.313-.031-.538-.074-.36-.075-.765-.135-1.273-.135-.3 0-.599.015-.913.074-.6.104-1.123.464-1.723.884-.853.599-1.826 1.288-3.294 1.288-.06 0-.119-.015-.18-.015h-.149c-1.468 0-2.427-.675-3.279-1.288-.599-.42-1.107-.779-1.707-.884-.314-.045-.629-.074-.928-.074-.54 0-.958.089-1.272.149-.211.043-.391.074-.54.074-.374 0-.523-.224-.583-.42-.061-.192-.09-.389-.135-.567-.046-.181-.105-.494-.166-.57-1.918-.222-2.95-.642-3.189-1.226-.031-.063-.052-.15-.055-.225-.015-.243.165-.465.42-.509 3.264-.54 4.73-3.879 4.791-4.02l.016-.029c.18-.345.224-.645.119-.869-.195-.434-.884-.658-1.332-.809-.121-.029-.24-.074-.346-.119-1.107-.435-1.257-.93-1.197-1.273.09-.479.674-.793 1.168-.793.146 0 .27.029.383.074.42.194.789.3 1.104.3.234 0 .384-.06.465-.105l-.046-.569c-.098-1.626-.225-3.651.307-4.837C7.392 1.077 10.739.807 11.727.807l.419-.015h.06z"/></svg></a>
+        <a href="https://discord.gg/Ydu9wBmXxu" target="_blank" rel="noopener noreferrer" class="soc soc-discord" aria-label="Discord"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.317 4.3698a19.7913 19.7913 0 00-4.8851-1.5152.0741.0741 0 00-.0785.0371c-.211.3753-.4447.8648-.6083 1.2495-1.8447-.2762-3.68-.2762-5.4868 0-.1636-.3933-.4058-.8742-.6177-1.2495a.077.077 0 00-.0785-.037 19.7363 19.7363 0 00-4.8852 1.515.0699.0699 0 00-.0321.0277C.5334 9.0458-.319 13.5799.0992 18.0578a.0824.0824 0 00.0312.0561c2.0528 1.5076 4.0413 2.4228 5.9929 3.0294a.0777.0777 0 00.0842-.0276c.4616-.6304.8731-1.2952 1.226-1.9942a.076.076 0 00-.0416-.1057c-.6528-.2476-1.2743-.5495-1.8722-.8923a.077.077 0 01-.0076-.1277c.1258-.0943.2517-.1923.3718-.2914a.0743.0743 0 01.0776-.0105c3.9278 1.7933 8.18 1.7933 12.0614 0a.0739.0739 0 01.0785.0095c.1202.099.246.1981.3728.2924a.077.077 0 01-.0066.1276 12.2986 12.2986 0 01-1.873.8914.0766.0766 0 00-.0407.1067c.3604.698.7719 1.3628 1.225 1.9932a.076.076 0 00.0842.0286c1.961-.6067 3.9495-1.5219 6.0023-3.0294a.077.077 0 00.0313-.0552c.5004-5.177-.8382-9.6739-3.5485-13.6604a.061.061 0 00-.0312-.0286zM8.02 15.3312c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9555-2.4189 2.157-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.9555 2.4189-2.1569 2.4189zm7.9748 0c-1.1825 0-2.1569-1.0857-2.1569-2.419 0-1.3332.9554-2.4189 2.1569-2.4189 1.2108 0 2.1757 1.0952 2.1568 2.419 0 1.3332-.946 2.4189-2.1568 2.4189Z"/></svg></a>
+      </div>
+      <p class="social-title">und/ oder kauf mein Merch 😉!</p>
+      <div class="socials">
+        <a href="https://flashis-merch.myspreadshop.de/" target="_blank" rel="noopener noreferrer" class="soc soc-merch" aria-label="Merch-Shop"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4l6 2l-1 3l-3 -1v12a1 1 0 0 1 -1 1h-8a1 1 0 0 1 -1 -1v-12l-3 1l-1 -3l6 -2a3 3 0 0 0 6 0"/></svg></a>
+      </div>
+    </footer>
+  </div>
+
+  <div class="overlay" id="yearOv">
+    <div class="modal year-modal">
+      <h3>Geburtsmonat und -Jahr</h3>
+      <div class="wheels">
+        <div class="wheelcol">
+          <div class="wheel-lbl">Monat</div>
+          <div class="wheel-wrap"><div class="wheel" id="wheelM"></div><div class="wheel-band"></div></div>
+        </div>
+        <div class="wheelcol">
+          <div class="wheel-lbl">Jahr</div>
+          <div class="wheel-wrap"><div class="wheel" id="wheel"></div><div class="wheel-band"></div></div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn-yes" id="yearOk">Auswählen</button>
+        <button class="btn-no" id="yearCancel">Abbrechen</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="confirmOv">
+    <div class="modal">
+      <h3>Bewerbung absenden?</h3>
+      <p>Du hast alle Angaben wahrheitsgemäß gegeben und möchtest deine Bewerbung an Flashi absenden?</p>
+      <div class="actions">
+        <button class="btn-yes" id="btnYes">Ja</button>
+        <button class="btn-no" id="btnNo">Nein</button>
+      </div>
+      <p class="err" id="sendErr" style="margin-top:14px"></p>
+    </div>
+  </div>
+
+  <div class="success" id="successScreen">
+    <div class="success-inner">
+      <div class="check">✉</div>
+      <h2>Fast geschafft!</h2>
+      <p class="big">Wir haben dir eine <b>Bestätigungsmail</b> geschickt.</p>
+      <p>Klicke den <b>Bestätigungs-Button</b> in dieser Mail – erst dann geht deine Bewerbung endgültig bei Flashi ein. Schau bitte auch in deinen <b>Spam-Ordner</b>, falls zunächst nichts ankommt.</p>
+      <div class="appid-box">
+        <span class="appid-label">Deine Bewerber-ID</span>
+        <div class="appid-coderow">
+          <span class="appid-code" id="appIdCode">—</span>
+          <button type="button" class="appid-copy" id="appIdCopy" aria-label="Bewerber-ID kopieren"><span class="cp-ic">📋</span><span class="cp-tx">Kopieren</span></button>
+        </div>
+        <p class="appid-hint">Das ist deine persönliche Bewerber-ID – bitte <b>merke sie dir</b>. Sie steht auch in der Bestätigungsmail. Möchtest du etwas zum Bearbeitungsstand erfahren, schreib einfach eine E-Mail an <b>TheFlashpointer@gmx.net</b> und trage deine Bewerber-ID in den <b>Betreff</b> ein.</p>
+      </div>
+      <p class="success-close">Du kannst dieses Fenster nun schließen.</p>
+    </div>
+  </div>
+
+  <div class="cookie" id="cookieBar">
+    <div class="cookie-in">
+      <div class="cookie-tx">
+        Diese Seite nutzt nur <b>technisch notwendige</b> Speicherung, um das Formular zu betreiben und sich diese Auswahl zu merken – <b>kein Tracking</b>, keine Weitergabe an Dritte. Du kannst dich auch bei „Ablehnen" ganz normal bewerben. Mehr dazu in der <a href="datenschutz.html" target="_blank" rel="noopener noreferrer">Datenschutzerklärung</a>.
+      </div>
+      <div class="cookie-btns">
+        <button type="button" class="ck-no" id="ckNo">Ablehnen</button>
+        <button type="button" class="ck-ok" id="ckOk">Akzeptieren</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const POINTER = 'https://raw.githubusercontent.com/MaxiGallaxy/pame-bewerbung/main/backend.json';
+    const now = new Date();
+    const CUR_YEAR = now.getFullYear();
+    const CUR_MONTH = now.getMonth() + 1;
+    const form = document.getElementById('appForm');
+    const formErr = document.getElementById('formErr');
+    const confirmOv = document.getElementById('confirmOv');
+    const sendErr = document.getElementById('sendErr');
+    const btnYes = document.getElementById('btnYes');
+    const submitBtn = document.getElementById('submitBtn');
+    const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+    const rejectedEntries = [];
+    let BACKEND = '';   // wird aus dem Zeiger (backend.json) gefüllt, wenn ClipForge online ist
+
+    // --- Ist ClipForge gerade erreichbar? Zeiger lesen (+ kurzer Ping). ---
+    async function detectBackend() {
+      try {
+        const r = await fetch(POINTER + '?t=' + Date.now(), { cache: 'no-store' });
+        if (!r.ok) throw 0;
+        const j = await r.json();
+        if (j && j.online && j.url) {
+          try {
+            const p = await fetch(j.url.replace(/\/+$/, '') + '/api/pame/ping', { cache: 'no-store' });
+            if (p.ok) { BACKEND = j.url.replace(/\/+$/, ''); return true; }
+          } catch (e) {}
+        }
+      } catch (e) {}
+      return false;
+    }
+    function setOpen(open) {
+      document.getElementById('closedNote').style.display = open ? 'none' : '';
+      submitBtn.disabled = !open;
+      submitBtn.textContent = open ? 'Abschicken' : 'Bewerbungsphase gerade geschlossen';
+    }
+    detectBackend().then(setOpen);
+    setInterval(() => detectBackend().then(setOpen), 60000);
+
+    // --- Cookie-Banner (ehrlich: nur Auswahl merken, kein Tracking) ---
+    (function () {
+      const bar = document.getElementById('cookieBar');
+      let choice = null;
+      try { choice = localStorage.getItem('pame_consent'); } catch (e) {}
+      if (!choice) bar.classList.add('open');
+      function decide(v) { try { localStorage.setItem('pame_consent', v); } catch (e) {} bar.classList.remove('open'); }
+      document.getElementById('ckOk').onclick = () => decide('accepted');
+      document.getElementById('ckNo').onclick = () => decide('declined');
+    })();
+
+    // --- Geburtsmonat-/-Jahr-Scrollräder ---
+    const yearField = document.getElementById('yearField');
+    const birthYearInput = document.getElementById('birthYearInput');
+    const birthMonthInput = document.getElementById('birthMonthInput');
+    const yearOv = document.getElementById('yearOv');
+    const ITEM_H = 44;
+    const MIN_Y = CUR_YEAR - 70, MAX_Y = CUR_YEAR - 10, DEFAULT_Y = CUR_YEAR - 18;
+
+    function makeWheel(el, items){
+      el.innerHTML = items.map((v, i) => `<div class="wheel-item" data-i="${i}">${v}</div>`).join('');
+      const its = Array.from(el.querySelectorAll('.wheel-item'));
+      function style(){
+        const c = el.scrollTop / ITEM_H;
+        for (let i = 0; i < its.length; i++){
+          const d = i - c, ad = Math.abs(d);
+          its[i].style.opacity = Math.max(0.12, 1 - ad * 0.26).toFixed(3);
+          its[i].style.transform = `perspective(600px) rotateX(${Math.max(-72, Math.min(72, d * -26))}deg) scale(${Math.max(0.66, 1 - ad * 0.12).toFixed(3)})`;
+        }
+      }
+      let raf = null;
+      el.addEventListener('scroll', () => { if (raf) return; raf = requestAnimationFrame(() => { style(); raf = null; }); });
+      its.forEach(it => it.addEventListener('click', () => el.scrollTo({ top: parseInt(it.dataset.i, 10) * ITEM_H, behavior: 'smooth' })));
+      return { value: () => items[Math.round(el.scrollTop / ITEM_H)], center: (i) => { el.scrollTop = i * ITEM_H; style(); }, style };
+    }
+    const years = []; for (let y = MIN_Y; y <= MAX_Y; y++) years.push(y);
+    const months = []; for (let m = 1; m <= 12; m++) months.push(m);
+    const wYear = makeWheel(document.getElementById('wheel'), years);
+    const wMonth = makeWheel(document.getElementById('wheelM'), months);
+
+    function openYear(){
+      const cy = parseInt(birthYearInput.value, 10), cm = parseInt(birthMonthInput.value, 10);
+      const startY = (cy && cy >= MIN_Y && cy <= MAX_Y) ? cy : DEFAULT_Y;
+      const startM = (cm && cm >= 1 && cm <= 12) ? cm : CUR_MONTH;
+      yearOv.classList.add('open');
+      setTimeout(() => { wYear.center(years.indexOf(startY)); wMonth.center(months.indexOf(startM)); }, 20);
+    }
+    yearField.addEventListener('click', openYear);
+    document.getElementById('yearCancel').onclick = () => yearOv.classList.remove('open');
+    yearOv.addEventListener('click', e => { if (e.target === yearOv) yearOv.classList.remove('open'); });
+    document.getElementById('yearOk').onclick = () => {
+      const y = wYear.value(), m = wMonth.value();
+      birthYearInput.value = y; birthMonthInput.value = m;
+      yearField.textContent = String(m).padStart(2, '0') + '/' + y;
+      yearField.classList.remove('placeholder');
+      yearOv.classList.remove('open');
+    };
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      formErr.textContent = '';
+      if (!BACKEND) { formErr.textContent = 'Die Bewerbungsphase ist gerade geschlossen. Bitte versuche es später noch einmal.'; return; }
+      const d = new FormData(form);
+      const nickname = (d.get('nickname') || '').trim();
+      const by = parseInt(d.get('birth_year'), 10);
+      const bm = parseInt(d.get('birth_month'), 10);
+      const twitch = (d.get('twitch_name') || '').trim();
+      const rl = (d.get('rl_name') || '').trim();
+      const email = (d.get('email') || '').trim();
+      const discord = (d.get('discord_name') || '').trim();
+
+      if (!nickname || !by || !bm || !twitch || !rl || !email || !discord) {
+        formErr.textContent = 'Bitte fülle alle Pflichtfelder (mit *) aus.'; return;
+      }
+      if (!EMAIL_RE.test(email)) {
+        formErr.textContent = 'Bitte gib eine gültige E-Mail-Adresse an.'; return;
+      }
+      const age = CUR_YEAR - by - (bm > CUR_MONTH ? 1 : 0);
+      if (age < 18) {
+        const entry = String(bm).padStart(2, '0') + '/' + by;
+        if (!rejectedEntries.includes(entry)) rejectedEntries.push(entry);
+        formErr.innerHTML = '🚫 Du bist leider noch nicht alt genug. Du musst dein 18. Lebensjahr bereits vollendet haben.';
+        return;
+      }
+      confirmOv.classList.add('open');
+    });
+
+    document.getElementById('btnNo').onclick = () => { confirmOv.classList.remove('open'); sendErr.textContent = ''; };
+
+    btnYes.onclick = async () => {
+      sendErr.textContent = '';
+      btnYes.disabled = true;
+      const d = new FormData(form);
+      d.set('birth_year_flag', rejectedEntries.join(', '));
+      try {
+        if (!BACKEND) throw new Error('Die Bewerbungsphase ist gerade geschlossen.');
+        const r = await fetch(BACKEND + '/api/pame/apply', { method: 'POST', body: d });
+        if (!r.ok) {
+          let msg = 'Senden fehlgeschlagen.';
+          try { const j = await r.json(); if (j.detail) msg = j.detail; } catch (e) {}
+          throw new Error(msg);
+        }
+        const j = await r.json().catch(() => ({}));
+        confirmOv.classList.remove('open');
+        const codeEl = document.getElementById('appIdCode');
+        if (codeEl) codeEl.textContent = j.code || '—';
+        document.getElementById('successScreen').classList.add('open');
+      } catch (err) {
+        sendErr.textContent = '⚠️ ' + err.message + ' Bitte versuche es später noch einmal.';
+        btnYes.disabled = false;
+      }
+    };
+
+    // Bewerber-ID kopieren
+    (function(){
+      const btn = document.getElementById('appIdCopy');
+      const codeEl = document.getElementById('appIdCode');
+      if (!btn || !codeEl) return;
+      const ic = btn.querySelector('.cp-ic'), tx = btn.querySelector('.cp-tx');
+      let resetT = null;
+      async function copyText(t){
+        try { await navigator.clipboard.writeText(t); return true; }
+        catch (e) {
+          try {
+            const ta = document.createElement('textarea');
+            ta.value = t; ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed'; ta.style.top = '-1000px'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.focus(); ta.select();
+            const ok = document.execCommand('copy');
+            document.body.removeChild(ta);
+            return ok;
+          } catch (e2) { return false; }
+        }
+      }
+      btn.addEventListener('click', async () => {
+        const code = (codeEl.textContent || '').trim();
+        if (!code || code === '—') return;
+        const ok = await copyText(code);
+        clearTimeout(resetT);
+        if (ok) {
+          btn.classList.remove('copied'); void btn.offsetWidth;
+          btn.classList.add('copied');
+          ic.textContent = '✓'; tx.textContent = 'Kopiert!';
+          resetT = setTimeout(() => { btn.classList.remove('copied'); ic.textContent = '📋'; tx.textContent = 'Kopieren'; }, 1700);
+        } else {
+          tx.textContent = 'Bitte manuell kopieren';
+          resetT = setTimeout(() => { tx.textContent = 'Kopieren'; }, 2000);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
