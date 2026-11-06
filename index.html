@@ -134,7 +134,7 @@
 
     /* Geschlossen-Hinweis (ClipForge offline) */
     .closed{margin:0 0 22px; padding:15px 17px; border-radius:14px; text-align:center;
-      background:rgba(255,93,108,.1); border:1px solid rgba(255,93,108,.4); color:#ffd3d8; font-size:14.5px; font-weight:600}
+      background:rgba(242,213,0,.08); border:1px solid rgba(242,213,0,.4); color:#f4ecd2; font-size:14.5px; font-weight:600}
     .closed small{display:block; margin-top:5px; font-weight:400; color:var(--muted)}
 
     /* Cookie-Banner */
@@ -192,8 +192,8 @@
     </header>
 
     <div class="closed" id="closedNote" style="display:none">
-      Die Bewerbungsphase ist gerade <b>geschlossen</b>.
-      <small>Bitte schau später noch einmal vorbei – dann ist das Formular wieder aktiv.</small>
+      Das Bewerbungsformular ist gerade <b>kurz offline</b>.
+      <small>Keine Sorge – wir suchen weiterhin! Bitte schau in ein paar Minuten noch einmal vorbei, dann kannst du dich ganz normal bewerben.</small>
     </div>
 
     <section class="intro">
@@ -367,10 +367,10 @@
     function setOpen(open) {
       document.getElementById('closedNote').style.display = open ? 'none' : '';
       submitBtn.disabled = !open;
-      submitBtn.textContent = open ? 'Abschicken' : 'Bewerbungsphase gerade geschlossen';
+      submitBtn.textContent = open ? 'Abschicken' : 'Formular gerade kurz offline – bitte später';
     }
     detectBackend().then(setOpen);
-    setInterval(() => detectBackend().then(setOpen), 60000);
+    setInterval(() => detectBackend().then(setOpen), 20000);
 
     // --- Cookie-Banner (ehrlich: nur Auswahl merken, kein Tracking) ---
     (function () {
@@ -433,7 +433,7 @@
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       formErr.textContent = '';
-      if (!BACKEND) { formErr.textContent = 'Die Bewerbungsphase ist gerade geschlossen. Bitte versuche es später noch einmal.'; return; }
+      if (!BACKEND) { formErr.textContent = 'Das Formular ist gerade kurz offline. Bitte versuche es in ein paar Minuten noch einmal.'; return; }
       const d = new FormData(form);
       const nickname = (d.get('nickname') || '').trim();
       const by = parseInt(d.get('birth_year'), 10);
@@ -467,7 +467,7 @@
       const d = new FormData(form);
       d.set('birth_year_flag', rejectedEntries.join(', '));
       try {
-        if (!BACKEND) throw new Error('Die Bewerbungsphase ist gerade geschlossen.');
+        if (!BACKEND) throw new Error('Das Formular ist gerade kurz offline.');
         const r = await fetch(BACKEND + '/api/pame/apply', { method: 'POST', body: d });
         if (!r.ok) {
           let msg = 'Senden fehlgeschlagen.';
