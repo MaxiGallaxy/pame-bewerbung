@@ -26,7 +26,15 @@
     .appid{margin:20px auto 0; max-width:360px; background:var(--card2); border:1px solid var(--line);
       border-left:4px solid var(--orange); border-radius:14px; padding:14px 16px; text-align:left}
     .appid span{display:block; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--muted)}
-    .appid b{font-size:26px; letter-spacing:.04em; color:var(--orange); font-family:ui-monospace,Consolas,monospace}
+    .appid b{font-size:26px; letter-spacing:.04em; color:var(--orange); font-family:ui-monospace,Consolas,monospace; margin:0}
+    .appid .coderow{display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:5px}
+    .id-copy{display:inline-flex; align-items:center; gap:6px; cursor:pointer; border:1px solid var(--line);
+      background:var(--card); color:var(--text); font-size:13px; font-weight:600; padding:8px 13px; border-radius:10px;
+      font-family:inherit; transition:background .18s, border-color .18s, color .18s, transform .06s}
+    .id-copy:hover{border-color:var(--orange)}
+    .id-copy:active{transform:scale(.95)}
+    .id-copy.copied{background:var(--good); border-color:var(--good); color:#06240f; animation:cp-pop .42s ease}
+    @keyframes cp-pop{0%{transform:scale(1)} 40%{transform:scale(1.14)} 100%{transform:scale(1)}}
     .retry{margin-top:18px; padding:12px 18px; border:none; border-radius:11px; cursor:pointer;
       background:var(--blue); color:#fff; font-size:15px; font-weight:700; font-family:inherit}
     .retry:hover{filter:brightness(1.1)}
@@ -73,13 +81,51 @@
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
     function showSuccess(j) {
-      const idBox = j.code ? '<div class="appid"><span>Deine Bewerber-ID</span><b>' + j.code + '</b></div>' : '';
+      const idBox = j.code
+        ? '<div class="appid"><span>Deine Bewerber-ID</span><div class="coderow">'
+          + '<b>' + j.code + '</b>'
+          + '<button type="button" class="id-copy" id="vIdCopy" aria-label="Bewerber-ID kopieren"><span class="ic">📋</span><span class="tx">Kopieren</span></button>'
+          + '</div></div>'
+        : '';
       if (j.status === 'already') {
         show('ok', 'Schon bestätigt ✅', 'Deine Bewerbung war bereits bestätigt – es ist alles erledigt. Flashi meldet sich bei dir.', idBox);
       } else {
         show('ok', 'Bewerbung erfolgreich zugestellt! 🎉',
           'Deine Bewerbung ist jetzt endgültig bei Flashi eingegangen. Wir melden uns per E-Mail bei dir – schau ggf. auch in den Spam-Ordner.', idBox);
       }
+      if (j.code) wireCopy(j.code);
+    }
+
+    // Bewerber-ID in die Zwischenablage kopieren (mit Fallback für unsichere Kontexte).
+    function wireCopy(code) {
+      const btn = document.getElementById('vIdCopy');
+      if (!btn) return;
+      const ic = btn.querySelector('.ic'), tx = btn.querySelector('.tx');
+      let resetT = null;
+      async function doCopy(t) {
+        try { await navigator.clipboard.writeText(t); return true; }
+        catch (e) {
+          try {
+            const ta = document.createElement('textarea');
+            ta.value = t; ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed'; ta.style.top = '-1000px'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.focus(); ta.select();
+            const ok = document.execCommand('copy'); document.body.removeChild(ta); return ok;
+          } catch (e2) { return false; }
+        }
+      }
+      btn.addEventListener('click', async () => {
+        const ok = await doCopy(code);
+        clearTimeout(resetT);
+        if (ok) {
+          btn.classList.remove('copied'); void btn.offsetWidth;
+          btn.classList.add('copied'); ic.textContent = '✓'; tx.textContent = 'Kopiert!';
+          resetT = setTimeout(() => { btn.classList.remove('copied'); ic.textContent = '📋'; tx.textContent = 'Kopieren'; }, 1700);
+        } else {
+          tx.textContent = 'Bitte manuell kopieren';
+          resetT = setTimeout(() => { tx.textContent = 'Kopieren'; }, 2000);
+        }
+      });
     }
 
     async function run() {
