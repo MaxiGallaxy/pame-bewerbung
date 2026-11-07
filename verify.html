@@ -88,7 +88,7 @@
           body: JSON.stringify({ token: t })
         });
         const j = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(j.detail || 'Bestätigung fehlgeschlagen.');
+        if (!r.ok) throw new Error(typeof j.detail === 'string' ? j.detail : 'Bestätigung konnte nicht abgeschlossen werden.');
         const idBox = j.code ? '<div class="appid"><span>Deine Bewerber-ID</span><b>' + j.code + '</b></div>' : '';
         if (j.status === 'already') {
           show('ok', 'Schon bestätigt ✅', 'Deine Bewerbung war bereits bestätigt – es ist alles erledigt. Flashi meldet sich bei dir.', idBox);
