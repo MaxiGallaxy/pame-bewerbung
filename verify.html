@@ -70,37 +70,52 @@
       } catch (e) { return ''; }
     }
 
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+    function showSuccess(j) {
+      const idBox = j.code ? '<div class="appid"><span>Deine Bewerber-ID</span><b>' + j.code + '</b></div>' : '';
+      if (j.status === 'already') {
+        show('ok', 'Schon bestätigt ✅', 'Deine Bewerbung war bereits bestätigt – es ist alles erledigt. Flashi meldet sich bei dir.', idBox);
+      } else {
+        show('ok', 'Bewerbung erfolgreich zugestellt! 🎉',
+          'Deine Bewerbung ist jetzt endgültig bei Flashi eingegangen. Wir melden uns per E-Mail bei dir – schau ggf. auch in den Spam-Ordner.', idBox);
+      }
+    }
+
     async function run() {
       const t = token();
       if (!t) { show('err', 'Link unvollständig', 'Dieser Bestätigungslink ist ungültig. Bitte nutze den Link aus deiner Bestätigungsmail.'); return; }
       show('wait', 'Bewerbung wird bestätigt …', 'Einen Moment bitte.');
-      const base = await backendUrl();
-      if (!base) {
-        show('err', 'Gerade nicht erreichbar',
-          'Die Bestätigung ist im Moment nicht möglich, weil der Bewerbungs-Eingang offline ist. ' +
-          '<b>Dein Link bleibt gültig</b> – bitte klicke ihn einfach später noch einmal an.',
-          '<button class="retry" onclick="run()">Erneut versuchen</button>');
-        return;
+      // Mehrere Versuche (selbstheilend): Der Zeiger (aktuelle Tunnel-Adresse) kann
+      // nach einem Neustart kurz veraltet sein, und eine einzelne Tunnel-Verbindung
+      // kann mal zucken. Ging eine Erfolgsantwort verloren, liefert der nächste
+      // Versuch „already" = ebenfalls Erfolg. Vor jedem Versuch den Zeiger neu lesen.
+      let wasOffline = false;
+      for (let i = 0; i < 3; i++) {
+        const base = await backendUrl();
+        if (!base) { wasOffline = true; await sleep(1500); continue; }
+        wasOffline = false;
+        try {
+          const r = await fetch(base + '/api/pame/verify', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: t })
+          });
+          const j = await r.json().catch(() => ({}));
+          if (r.ok) { showSuccess(j); return; }
+          // Server hat geantwortet und abgelehnt (z. B. ungültiges Token) – kein Retry.
+          show('err', 'Bestätigung fehlgeschlagen',
+            (typeof j.detail === 'string' ? j.detail : 'Bestätigung konnte nicht abgeschlossen werden.') +
+            ' <b>Dein Link bleibt gültig</b> – du kannst es später erneut versuchen.',
+            '<button class="retry" onclick="run()">Erneut versuchen</button>');
+          return;
+        } catch (e) { await sleep(1500); }
       }
-      try {
-        const r = await fetch(base + '/api/pame/verify', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: t })
-        });
-        const j = await r.json().catch(() => ({}));
-        if (!r.ok) throw new Error(typeof j.detail === 'string' ? j.detail : 'Bestätigung konnte nicht abgeschlossen werden.');
-        const idBox = j.code ? '<div class="appid"><span>Deine Bewerber-ID</span><b>' + j.code + '</b></div>' : '';
-        if (j.status === 'already') {
-          show('ok', 'Schon bestätigt ✅', 'Deine Bewerbung war bereits bestätigt – es ist alles erledigt. Flashi meldet sich bei dir.', idBox);
-        } else {
-          show('ok', 'Bewerbung erfolgreich zugestellt! 🎉',
-            'Deine Bewerbung ist jetzt endgültig bei Flashi eingegangen. Wir melden uns per E-Mail bei dir – schau ggf. auch in den Spam-Ordner.', idBox);
-        }
-      } catch (err) {
-        show('err', 'Bestätigung fehlgeschlagen',
-          (err.message || 'Unbekannter Fehler') + ' <b>Dein Link bleibt gültig</b> – du kannst es später erneut versuchen.',
-          '<button class="retry" onclick="run()">Erneut versuchen</button>');
-      }
+      show('err', wasOffline ? 'Gerade nicht erreichbar' : 'Verbindung hat nicht geklappt',
+        (wasOffline
+          ? 'Der Bewerbungs-Eingang ist im Moment offline. '
+          : 'Die Verbindung hat gerade nicht geklappt. ') +
+        '<b>Dein Link bleibt gültig</b> – bitte versuche es gleich noch einmal.',
+        '<button class="retry" onclick="run()">Erneut versuchen</button>');
     }
     window.run = run;
     run();
