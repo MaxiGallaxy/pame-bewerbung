@@ -136,6 +136,17 @@
     .closed{margin:0 0 22px; padding:15px 17px; border-radius:14px; text-align:center;
       background:rgba(242,213,0,.08); border:1px solid rgba(242,213,0,.4); color:#f4ecd2; font-size:14.5px; font-weight:600}
     .closed small{display:block; margin-top:5px; font-weight:400; color:var(--muted)}
+    .closed-actions{margin-top:13px; display:flex; flex-direction:column; align-items:center; gap:7px}
+    .btn-recheck{display:inline-flex; align-items:center; gap:8px; padding:9px 18px; border-radius:11px; cursor:pointer;
+      background:linear-gradient(135deg,var(--blue),var(--blue2)); color:#fff; border:none;
+      font-size:14px; font-weight:700; font-family:inherit; transition:filter .15s, transform .05s}
+    .btn-recheck:hover{filter:brightness(1.1)}
+    .btn-recheck:active{transform:scale(.97)}
+    .btn-recheck:disabled{filter:grayscale(.4) brightness(.8); cursor:default}
+    .btn-recheck .rc-ic{display:inline-block}
+    .btn-recheck.checking .rc-ic{animation:rc-spin .8s linear infinite}
+    @keyframes rc-spin{from{transform:rotate(0)} to{transform:rotate(360deg)}}
+    .closed-checked{font-size:11.5px; color:var(--muted); font-weight:400; min-height:14px}
 
     /* Cookie-Banner */
     .cookie{position:fixed; left:0; right:0; bottom:0; z-index:70; display:none;
@@ -193,7 +204,11 @@
 
     <div class="closed" id="closedNote" style="display:none">
       Das Bewerbungsformular ist gerade <b>kurz offline</b>.
-      <small>Keine Sorge – wir suchen weiterhin! Versuche es einfach später nochmal. Vielen Dank.</small>
+      <small>Keine Sorge – wir suchen weiterhin! Versuche es gleich noch einmal oder in ein paar Minuten. Vielen Dank.</small>
+      <div class="closed-actions">
+        <button type="button" class="btn-recheck" id="btnRecheck"><span class="rc-ic">🔄</span><span class="rc-tx">Jetzt erneut prüfen</span></button>
+        <span class="closed-checked" id="checkedAt"></span>
+      </div>
     </div>
 
     <section class="intro">
@@ -364,13 +379,65 @@
       } catch (e) {}
       return false;
     }
+    const btnRecheck = document.getElementById('btnRecheck');
+    const checkedAt = document.getElementById('checkedAt');
+    const CHECK_ONLINE = 20000;   // online: seltener prüfen (nur Offline-Gehen bemerken)
+    const CHECK_OFFLINE = 5000;   // offline: häufig prüfen, damit das Formular schnell wieder aktiv wird
+    let isOnline = false;
+    let pollTimer = null;
+
+    function stamp() {
+      if (!checkedAt) return;
+      const t = new Date();
+      const p = n => String(n).padStart(2, '0');
+      checkedAt.textContent = 'Zuletzt geprüft: ' + p(t.getHours()) + ':' + p(t.getMinutes()) + ':' + p(t.getSeconds()) + ' Uhr';
+    }
     function setOpen(open) {
+      isOnline = open;
       document.getElementById('closedNote').style.display = open ? 'none' : '';
       submitBtn.disabled = !open;
       submitBtn.textContent = open ? 'Abschicken' : 'Formular gerade kurz offline – bitte später';
     }
-    detectBackend().then(setOpen);
-    setInterval(() => detectBackend().then(setOpen), 20000);
+    async function runCheck() {
+      const open = await detectBackend();
+      setOpen(open);
+      stamp();
+      return open;
+    }
+    function schedulePoll() {
+      clearTimeout(pollTimer);
+      pollTimer = setTimeout(async () => { await runCheck(); schedulePoll(); }, isOnline ? CHECK_ONLINE : CHECK_OFFLINE);
+    }
+    // Manueller „Jetzt erneut prüfen"-Knopf: sofortige Prüfung + sichtbare Rückmeldung.
+    if (btnRecheck) {
+      const rcTx = btnRecheck.querySelector('.rc-tx');
+      let rcReset = null;
+      btnRecheck.addEventListener('click', async () => {
+        if (btnRecheck.disabled) return;
+        clearTimeout(rcReset);
+        btnRecheck.disabled = true;
+        btnRecheck.classList.add('checking');
+        if (rcTx) rcTx.textContent = 'prüfe …';
+        const started = Date.now();
+        const open = await runCheck();
+        // Mindestens kurz sichtbar lassen, damit die Rückmeldung spürbar ist.
+        const rest = 450 - (Date.now() - started);
+        if (rest > 0) await new Promise(r => setTimeout(r, rest));
+        btnRecheck.classList.remove('checking');
+        if (open) {
+          // Formular ist jetzt aktiv – der Hinweis blendet sich ohnehin aus.
+          if (rcTx) rcTx.textContent = 'Jetzt erneut prüfen';
+          btnRecheck.disabled = false;
+        } else {
+          if (rcTx) rcTx.textContent = 'Noch offline – nochmal prüfen';
+          btnRecheck.disabled = false;
+          rcReset = setTimeout(() => { if (rcTx) rcTx.textContent = 'Jetzt erneut prüfen'; }, 2600);
+        }
+        schedulePoll(); // Intervall nach der manuellen Prüfung neu takten
+      });
+    }
+    // Start: einmal prüfen, dann adaptiv weiter.
+    runCheck().then(schedulePoll);
 
     // --- Cookie-Banner (ehrlich: nur Auswahl merken, kein Tracking) ---
     (function () {
