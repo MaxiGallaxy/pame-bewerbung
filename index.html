@@ -350,7 +350,16 @@
   </div>
 
   <script>
-    const POINTER = 'https://raw.githubusercontent.com/MaxiGallaxy/pame-bewerbung/main/backend.json';
+    // Mehrere CDN-Spiegel DERSELBEN Zeiger-Datei. GitHubs Cache liefert einzelnen
+    // Clients zeitweise uralte Kopien (Edge-Roulette) – eine einzelne Quelle kann
+    // darum auf einen längst toten Tunnel zeigen und die Seite fälschlich
+    // „offline" melden. Wir lesen alle Spiegel gleichzeitig und pingen JEDE
+    // gefundene Adresse; online, sobald irgendeine wirklich antwortet.
+    const POINTERS = [
+      'https://raw.githubusercontent.com/MaxiGallaxy/pame-bewerbung/main/backend.json',
+      'https://maxigallaxy.github.io/pame-bewerbung/backend.json',
+      'https://cdn.jsdelivr.net/gh/MaxiGallaxy/pame-bewerbung@main/backend.json',
+    ];
     const now = new Date();
     const CUR_YEAR = now.getFullYear();
     const CUR_MONTH = now.getMonth() + 1;
@@ -364,19 +373,41 @@
     const rejectedEntries = [];
     let BACKEND = '';   // wird aus dem Zeiger (backend.json) gefüllt, wenn ClipForge online ist
 
-    // --- Ist ClipForge gerade erreichbar? Zeiger lesen (+ kurzer Ping). ---
-    async function detectBackend() {
+    // Einen einzelnen Spiegel lesen (Cache mit eindeutigem Parameter umgehen).
+    async function _readPointer(url, cb) {
       try {
-        const r = await fetch(POINTER + '?t=' + Date.now(), { cache: 'no-store' });
-        if (!r.ok) throw 0;
-        const j = await r.json();
-        if (j && j.online && j.url) {
-          try {
-            const p = await fetch(j.url.replace(/\/+$/, '') + '/api/pame/ping', { cache: 'no-store' });
-            if (p.ok) { BACKEND = j.url.replace(/\/+$/, ''); return true; }
-          } catch (e) {}
-        }
-      } catch (e) {}
+        const sep = url.includes('?') ? '&' : '?';
+        const r = await fetch(url + sep + 'cb=' + cb, { cache: 'no-store' });
+        if (!r.ok) return null;
+        return await r.json();
+      } catch (e) { return null; }
+    }
+    // Antwortet dieser Tunnel wirklich? (Nur ein Lebenszeichen, /api/pame/ping.)
+    async function _pingOk(url) {
+      try {
+        const p = await fetch(url.replace(/\/+$/, '') + '/api/pame/ping', { cache: 'no-store' });
+        return p.ok;
+      } catch (e) { return false; }
+    }
+    // --- Ist ClipForge gerade erreichbar? Alle Spiegel lesen, jede Adresse pingen. ---
+    async function detectBackend() {
+      const cb = Date.now() + '-' + Math.random().toString(36).slice(2);
+      const jsons = await Promise.all(POINTERS.map(u => _readPointer(u, cb)));
+      // Alle als online gemeldeten Adressen sammeln, neueste zuerst, ohne Dubletten.
+      const cands = jsons
+        .filter(j => j && j.online && j.url)
+        .sort((a, b) => (b.updated || 0) - (a.updated || 0));
+      const seen = new Set(), urls = [];
+      for (const j of cands) {
+        const u = j.url.replace(/\/+$/, '');
+        if (!seen.has(u)) { seen.add(u); urls.push(u); }
+      }
+      // Erste Adresse, die wirklich antwortet, gewinnt. Eine veraltete (tote) Kopie
+      // wird so still übersprungen, statt die Seite fälschlich offline zu melden.
+      for (const u of urls) {
+        if (await _pingOk(u)) { BACKEND = u; return true; }
+      }
+      BACKEND = '';
       return false;
     }
     const btnRecheck = document.getElementById('btnRecheck');
